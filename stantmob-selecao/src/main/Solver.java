@@ -1,38 +1,67 @@
 package main;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class Solver {
-	private Map values;
-	private List keyIndex;
+	private List<String> talkList;
+	private List<Integer> timeList;
 	private List<Integer> aux = new ArrayList<Integer>();
-	private int currentTime = 9;
-	private int remainingTime = 180;	
-	private int activities;
+	private List<String> answer = new ArrayList<String>();
+	private int currentTime = 540;
+	private int remainingTime = 240;	
+	private int activities = 0;
+	private double tracks;
 	private Integer[][] record;
 
 	public Solver() throws IOException {
-		Init init = new Init();
-		values = init.getMap();
-		keyIndex = init.getKeyIndex();
-		activities = keyIndex.size();
-		record = new Integer[activities + 1][remainingTime + 1];
-	}
+		double total = 0;
+		//URL url = Main.class.getClassLoader().getResource("files/proposals.txt");
+		//URL url = Main.class.getClassLoader().getResource("files/proposals2.txt");
+		URL url = Main.class.getClassLoader().getResource("files/proposals3.txt");
 
-	public int getValue(int index) {
-		return (Integer) values.get(keyIndex.get(index));
+		
+		File file = new File(url.getPath());
+		BufferedReader reader = new BufferedReader(new FileReader(file)); 
+
+		String line;
+		talkList = new ArrayList<String>();
+		timeList = new ArrayList<Integer>();
+
+		while((line = reader.readLine()) != null) {
+			activities++;
+			String last = line.replaceAll("\\D+","");
+			
+			int time;
+			if(last.equals("")) {
+				time =  5;
+			} else {
+				time = Integer.parseInt(last.split("m")[0]);
+			}
+
+			int duration = time;
+			total += time;
+			
+			talkList.add(line);
+			timeList.add(duration);
+		}
+		
+		reader.close();
+		tracks = Math.ceil(total/420);
+		record = new Integer[activities + 1][remainingTime + 1];
 	}
 
 	public Integer[][] getRecord() {
 		return record;
 	}
-	
-	public int pd(int act, int remainingTime) {
-		//TODO CONDIÇÕES DE PARADA
 
+	public int pd(int act, int remainingTime) {
 		if((remainingTime == 0) || (act == activities)) {
 			record[act][remainingTime] = 0;
 			return 0;
@@ -42,15 +71,15 @@ public class Solver {
 			return record[act][remainingTime];
 		}
 
-		if(getValue(act) > remainingTime) {
+		if(timeList.get(act) > remainingTime) {
 			record[act][remainingTime] = pd(act + 1, remainingTime);
 		} else {
-			int put = 1 + pd(act + 1, remainingTime - getValue(act));
+			int put = 1 + pd(act + 1, remainingTime - timeList.get(act));
 			int notPut = pd(act + 1, remainingTime);
 
 			if(put > notPut) {
 				record[act][remainingTime] = put;
-				
+
 			}else {
 				record[act][remainingTime] = notPut;
 			}
@@ -58,26 +87,65 @@ public class Solver {
 		//System.out.println(getValue(act) + " " + remainingTime + " " + record[act][remainingTime]);
 		return record[act][remainingTime];
 	}
-	
-	public List track(int act, int remainingTime) {
-		if (act == 8 || record[act + 1][remainingTime] == null) {
+
+	public List<Integer> track(int act, int remainingTime) {
+		if (act == activities || record[act + 1][remainingTime] == null) {
 			return null;
 		}
-		
+
 		if (record[act][remainingTime] > record[act + 1][remainingTime]) {
 			aux.add(act);
-			return track(act + 1, remainingTime - getValue(act));
+			
+			return track(act + 1, remainingTime - timeList.get(act));
 		} else {
 			return track(act + 1, remainingTime);
 		}
 	}
 	
-	public List getAux() {
-		int total = 0;
-		for (Integer i : aux) {
-			total += getValue(i);
+	public void reset(List<Integer> indexes) {
+		record = new Integer[activities + 1][remainingTime + 1];
+		aux = new ArrayList<Integer>();
+		
+		for (int index : indexes) {
+			String str = formatting(currentTime) + " " + talkList.get(index);
+			answer.add(str);
+			currentTime += timeList.get(index);
 		}
-		System.out.println(total);
+		
+		Collections.reverse(indexes);
+		for (int index : indexes) {
+			activities--;
+			talkList.remove(index);
+			timeList.remove(index);
+		}
+		
+	}
+	
+	public String formatting(int time) {
+		int hour = time / 60;
+		int minute = time % 60;
+		String str = String.format("%02d" , hour) + ":" + String.format("%02d" , minute);
+		return str;
+	}
+
+	public List<String> getAnswer() {
+		return answer;
+	}
+	
+	public List<Integer> getAux() {
 		return aux;
+	}
+	
+	public double getTracks() {
+		return tracks;
+	}
+	
+	public void setTask(String task, int time) {
+		answer.add(task);
+		currentTime = time;
+	}
+	
+	public void setCurrentTime(int time) {
+		currentTime = time;
 	}
 }
