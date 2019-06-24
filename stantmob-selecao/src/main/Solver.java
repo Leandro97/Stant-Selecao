@@ -22,9 +22,9 @@ public class Solver {
 
 	public Solver() throws IOException {
 		double total = 0;
-		//URL url = Main.class.getClassLoader().getResource("files/proposals.txt");
+		URL url = Main.class.getClassLoader().getResource("files/proposals.txt");
 		//URL url = Main.class.getClassLoader().getResource("files/proposals2.txt");
-		URL url = Main.class.getClassLoader().getResource("files/proposals3.txt");
+		//URL url = Main.class.getClassLoader().getResource("files/proposals3.txt");
 
 		
 		File file = new File(url.getPath());
